@@ -209,7 +209,15 @@ class _GunState extends State<Gun> with TickerProviderStateMixin {
     _wheelAnim = Tween(
         begin: 0.0,
         end: 20.0
-    ).animate(_wheelCont)..addListener(() => setState(() { if(_wheelAnim.status == AnimationStatus.completed) _wheelCont.reverse();}));
+    ).animate(_wheelCont)..addListener(
+      () => setState(
+        () {
+          if(_wheelAnim.status == AnimationStatus.completed) {
+            _wheelCont.reverse();
+          }
+        }
+      )
+    );
 
     _wheelCont.forward();
     _flowAnim = Tween(begin: 0.0, end: 0.0).animate(_flowCont);

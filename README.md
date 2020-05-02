@@ -7,6 +7,7 @@ Flutter application.Unfinished copy of [Ball Blast](https://play.google.com/stor
 
 <p>
   <img width="205px" alt="Example" src="https://raw.githubusercontent.com/Goraerushenko/Ball-Blast/master/screenshots/example.gif"/>
+  <img width="205px" alt="Second Example" src="https://raw.githubusercontent.com/Goraerushenko/Ball-Blast/master/screenshots/secondExample.gif"/>
 </p>
 
 
