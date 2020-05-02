@@ -1,16 +1,12 @@
-# ball_blast
 
-A new Flutter application.
+# Ball Blast
 
-## Getting Started
+Flutter application.Unfinished copy of [Ball Blast](https://play.google.com/store/apps/details?id=com.nomonkeys.ballblast&hl=ru).
 
-This project is a starting point for a Flutter application.
+## Examples
 
-A few resources to get you started if this is your first Flutter project:
+<p>
+  <img width="205px" alt="Example" src="https://raw.githubusercontent.com/Goraerushenko/Ball-Blast/master/screenshots/example.gif"/>
+</p>
 
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
 
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
