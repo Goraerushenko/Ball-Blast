@@ -25,7 +25,7 @@ class _LoadingPageState extends State<LoadingPage> with TickerProviderStateMixin
 
   @override
   void initState() {
-    _loadCont = AnimationController(vsync: this, duration: Duration(milliseconds: 500));
+    _loadCont = AnimationController(vsync: this, duration: Duration(seconds: 5));
     _loadAnim = Tween (
       begin: 0.0,
       end: widget.size.width - 100

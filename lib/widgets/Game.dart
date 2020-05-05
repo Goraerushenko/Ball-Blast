@@ -5,11 +5,6 @@ import 'package:flutter/material.dart';
 import '../models/gunController.dart';
 import '../models/gunStencil.dart';
 
-class GameStatus {
-  final bool active = true;
-  final bool menu = false;
-}
-
 class Game extends StatefulWidget {
   Game({
     Key key,
@@ -36,7 +31,7 @@ class _GameState extends State<Game> {
 
   @override
   void initState() {
-    gunController.power = 2;
+    gunController.power = 1;
     gunController.shootSpeed = 10;
     super.initState();
   }
@@ -70,45 +65,9 @@ class Gun extends StatefulWidget {
 }
 
 class _GunState extends State<Gun> with TickerProviderStateMixin {
-
-  double _xPosOfGun = 0.0;
+  double _gunPosDX = 0.0;
   Offset _barrelPos;
   Offset _framePos;
-  Timer _shootTime;
-  bool _canceled = false;
-  List<Animation<Offset>> _bulletAnimList = [];
-  List<AnimationController> _bulletContList = [];
-  AnimationController _shotCont;
-  AnimationController _flowCont;
-  Animation<double> _flowAnim;
-  Animation<double> _shotAnim;
-  Animation<double> _wheelAnim;
-  AnimationController _wheelCont;
-
-  Animation<double> _stencilAnimFlow ({@required double begin, @required double end, @required Function addListener}) {
-    _flowCont = AnimationController(vsync: this, duration: Duration(milliseconds: 100));
-    return  Tween(
-        begin: begin,
-        end: end
-    ).animate(CurvedAnimation(
-        curve: Curves.linear,
-        parent: _flowCont
-    ))..addListener(() => setState(() {
-      if(_flowAnim.status == AnimationStatus.completed ) {
-        if(widget.gunController.gunPos.length != 0) {
-          addListener();
-        }
-      }
-    }));
-  }
-
-  Offset _getGunPos () {
-    RenderBox box = widget.gunController.gunKey.currentContext.findRenderObject();
-    Offset curPos =  box.localToGlobal(Offset.zero) ?? Offset(0, 0);
-    int power = widget.gunController.power;
-    curPos = Offset(curPos.dx -  ((power*5 + power-1) / 2), curPos.dy);
-    return curPos;
-  }
 
   double _getScreenPaleWidth () {
     final double gunWidth =  (widget.gun.wheelSize.width * 2 + widget.gun.wheelSize.width / 2);
@@ -116,134 +75,12 @@ class _GunState extends State<Gun> with TickerProviderStateMixin {
   }
 
   void _whenGunStarted () {
-    _canceled = false;
-    _shotCont.forward();
-    _shootTime = Timer.periodic(Duration(milliseconds: 1000 ~/ widget.gunController.shootSpeed), (timer) {
-      _bulletContList.add(AnimationController(vsync: this, duration: Duration(milliseconds: 1000)));
-      _bulletAnimList.add(
-          Tween(
-              begin: _getGunPos(),
-              end: Offset(_getGunPos().dx, -10)
-          ).animate(
-              _bulletContList[_bulletContList.length-1]
-          )..addListener(
-                  () => setState(() {
-                if(_bulletAnimList[0].status == AnimationStatus.completed) {
-                  _bulletAnimList.removeAt(0);
-                  _bulletContList.removeAt(0);
-                  widget.bulletController.list.removeAt(0);
-                  widget.bulletController.reRender();
-                }
-              })
-          )
-      );
-      _bulletContList[_bulletContList.length-1].forward();
-      widget.bulletController.list.add(
-          BulletRow(
-              index: _bulletContList.length-1,
-              count: widget.gunController.power
-          )
-      );
-    });
-  }
-
-  void _createSecondAnimation ({@required double begin, @required double end}) {
-    _flowAnim = _stencilAnimFlow(
-        begin: begin,
-        end: end,
-        addListener: () {
-          Map<String, double> firstEl = widget.gunController.posListClipper();
-          _createSecondAnimation(
-              begin: firstEl['previos'],
-              end: firstEl['now']
-          );
-          _flowCont.forward();
-        }
-    );
-  }
-
-  void _createFirstFlowAnim () {
-    Map<String, double> clipped = widget.gunController.posListClipper();
-    _flowAnim = _stencilAnimFlow(
-        begin: clipped['previos'],
-        end: clipped['now'],
-        addListener: () {
-          clipped = widget.gunController.posListClipper();
-          Map<String, double> firstEl = clipped;
-          _createSecondAnimation(begin: firstEl['previos'], end: firstEl['now']);
-          _flowCont.forward();
-        }
-    );
-    _flowCont.forward();
+    widget.bulletController.anim.start();
   }
 
   void _whenGunIsCanceled () {
-    _canceled = true;
-    _shootTime.cancel();
+    widget.bulletController.anim.cancel();
   }
-
-  void _createAnimations () {
-    _shotCont = AnimationController(vsync: this, duration: Duration(milliseconds: 100));
-    _shotAnim = Tween(
-        begin: 0.0,
-        end: widget.gun.wheelSize.width * 0.25
-    ).animate(_shotCont)
-      ..addListener(
-              () => setState(
-                  () {
-                if (_shotAnim.status == AnimationStatus.dismissed) {
-                  if (!_canceled) {
-                    _shotCont.forward();
-                  }
-                } else if (_shotAnim.status == AnimationStatus.completed){
-                  _shotCont.reverse();
-                }
-              }
-          )
-      );
-
-    _flowCont = AnimationController(vsync: this, duration: Duration(seconds: 1));
-
-    _wheelCont = AnimationController(vsync: this, duration: Duration(seconds: 10));
-
-    _wheelAnim = Tween(
-        begin: 0.0,
-        end: 20.0
-    ).animate(_wheelCont)..addListener(
-      () => setState(
-        () {
-          if(_wheelAnim.status == AnimationStatus.completed) {
-            _wheelCont.reverse();
-          }
-        }
-      )
-    );
-
-    _wheelCont.forward();
-    _flowAnim = Tween(begin: 0.0, end: 0.0).animate(_flowCont);
-  }
-
-  Widget _bulletsRender () => Stack(
-    children: widget.bulletController.list.map((el) => Row(
-      children: List(el.count).map((e) => Padding(
-        padding: const EdgeInsets.only(left: 1.0),
-        child: Transform.translate(
-            offset: _bulletAnimList[el.index].value,
-            child: Container(
-              height: 15,
-              width: 7,
-              decoration: BoxDecoration(
-                color: Colors.transparent,
-                image: DecorationImage(
-                  image: AssetImage('assets/gunElements/bullet.png'),
-                  fit: BoxFit.contain
-                )
-              ),
-            )
-        ),
-      )).toList(),
-    )).toList(),
-  );
 
   Widget _ballsRender () => Stack(
     children: <Widget>[
@@ -263,23 +100,36 @@ class _GunState extends State<Gun> with TickerProviderStateMixin {
         -widget.gun.bodySize.height + (widget.gun.wheelSize.height / 2)
     );
 
-    _createAnimations ();
+    widget.gunController.anim.initial (
+      controller: AnimationController(vsync: this, duration: Duration(milliseconds: 100), reverseDuration: Duration(milliseconds: 0)),
+      update: () => setState(() {}),
+      gunController: widget.gunController,
+    );
+
+    widget.bulletController.anim.initial(
+      provider: this,
+      bulletController: widget.bulletController,
+      wheelSize: widget.gun.wheelSize,
+      update: () => setState(() {}),
+      gunController: widget.gunController
+    );
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     return Stack(
-      children: <Widget>[
+      children: <Widget> [
+        widget.bulletController.anim.render(),
         Align(
           alignment: Alignment.bottomCenter,
           child: Transform.translate(
             offset: Offset(
-                _flowAnim.value < 0 ?
+                widget.gunController.anim.value() < 0 ?
                   0.0 :
-                  (_flowAnim.value > _getScreenPaleWidth() ?
+                  (widget.gunController.anim.value() > _getScreenPaleWidth() ?
                     _getScreenPaleWidth() :
-                    _flowAnim.value),
+                  widget.gunController.anim.value()),
                 -70
             ),
             child: Stack(
@@ -293,38 +143,38 @@ class _GunState extends State<Gun> with TickerProviderStateMixin {
                 ),
 
                 Transform.translate(
-                  offset: Offset(_barrelPos.dx, _barrelPos.dy + _shotAnim.value),
+                  offset: Offset(_barrelPos.dx, _barrelPos.dy + widget.bulletController.anim.value()),
                   child: widget.gun.barrel(),
                 ),
 
                 Row(
                   children: <Widget>[
                     Transform.rotate(
-                      angle: _flowAnim.value * 0.05,
+                      angle: widget.gunController.anim.getWheelRotation(),
                       child: widget.gun.wheel(),
                     ),
                     SizedBox(width: widget.gun.wheelSize.width / 2,),
                     Transform.rotate(
-                      angle: _flowAnim.value * 0.05,
+                      angle: widget.gunController.anim.getWheelRotation(),
                       child: widget.gun.wheel(),
                     ),
                   ],
                 ),
 
                 Transform.translate(
-                  offset: Offset(widget.gun.wheelSize.width + widget.gun.wheelSize.width / 4, -widget.gun.bodySize.height),
+                  offset: Offset(_barrelPos.dx + widget.gun.bodySize.width / 2, _barrelPos.dy + 5),
                   child: Container(
-                    key: widget.gunController.gunKey,
+                    key: widget.gunController.pos.gunKey,
                     height: 1,
                     width: 1,
-                    color: Colors.transparent,
+                    color: Colors.red,
                   ),
                 ),
               ],
             ),
           ),
         ),
-        _bulletsRender(),
+
         Listener(
           onPointerDown: (details) {
             _whenGunStarted();
@@ -334,16 +184,14 @@ class _GunState extends State<Gun> with TickerProviderStateMixin {
           },
           onPointerMove: (details) {
 
-            if(_xPosOfGun + details.delta.dx > 0.0 && _xPosOfGun + details.delta.dx < _getScreenPaleWidth()) {
-              widget.gunController.gunPos.add({
-                'previos': _xPosOfGun,
-                'now': _xPosOfGun + details.delta.dx
-              });
+            if(_gunPosDX + details.delta.dx > 0.0 && _gunPosDX + details.delta.dx < _getScreenPaleWidth()) {
+              widget.gunController.pos.newEl(_gunPosDX, _gunPosDX + details.delta.dx);
 
-              if(AnimationStatus.forward != _flowAnim.status) {
-                _createFirstFlowAnim();
+              if(AnimationStatus.forward != widget.gunController.anim.status()) {
+                widget.gunController.anim.startAnim();
               }
-              _xPosOfGun +=  details.delta.dx;
+
+              _gunPosDX +=  details.delta.dx;
             }
           },
           child: Container(
