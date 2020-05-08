@@ -15,12 +15,14 @@ class GunController {
 class Pos {
   List<Map<String, double>>  listPos = [];
   GlobalKey gunKey = GlobalKey();
+
   Offset getGunPos () {
     RenderBox box = gunKey.currentContext.findRenderObject();
     Offset curPos =  box.localToGlobal(Offset.zero) ?? Offset(0, 0);
-    curPos = Offset(curPos.dx - 3.5, curPos.dy);
+    curPos = Offset(curPos.dx - 5, curPos.dy);
     return curPos;
   }
+
   void newEl (double previous, double cur) {
     listPos.add(
         {
@@ -45,7 +47,12 @@ class Anim {
 
   AnimationController _flowCont;
 
-  Animation<double> _stencilAnimFlow ({@required double begin, @required double end, @required Function addListener}) {
+  TickerProvider _provider;
+
+  Animation<double> _stencilAnimFlow ({
+    @required double begin,
+    @required double end,
+    @required Function addListener,}) {
     _flowCont.reverse();
     return  Tween (
         begin: begin,
@@ -91,7 +98,7 @@ class Anim {
     );
   }
 
-  void startAnim () {
+  void start () {
     Map<String, double> clipped = _posListClipper();
     _flowAnim = _stencilAnimFlow (
         end: clipped['cur'],
@@ -106,10 +113,15 @@ class Anim {
     _flowCont.forward();
   }
 
-  void initial ({AnimationController controller, Function update, GunController gunController}) {
-    _flowCont = controller;
+  void initial ({
+    @required GunController gunController,
+    @required Function update,
+    @required TickerProvider provider,
+    double startPos = 0.0}) {
+    _provider = provider;
+    _flowCont = AnimationController(vsync: _provider, duration: Duration(milliseconds: 100), reverseDuration: Duration(milliseconds: 0));;
     _update = update;
     _gunController = gunController;
-    _flowAnim = Tween(begin: 0.0, end: 0.0).animate(_flowCont);
+    _flowAnim = Tween(begin: startPos, end: 0.0).animate(_flowCont);
   }
 }

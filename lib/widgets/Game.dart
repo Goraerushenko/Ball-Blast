@@ -1,5 +1,6 @@
-import 'dart:async';
+import 'dart:math';
 
+import 'package:ball_blast/models/ballController.dart';
 import 'package:ball_blast/models/bulletController.dart';
 import 'package:flutter/material.dart';
 import '../models/gunController.dart';
@@ -25,6 +26,8 @@ class Game extends StatefulWidget {
 
 class _GameState extends State<Game> {
 
+  final BallController ballController = BallController();
+
   final GunController gunController = GunController();
 
   final BulletController bulletController = BulletController();
@@ -32,7 +35,7 @@ class _GameState extends State<Game> {
   @override
   void initState() {
     gunController.power = 1;
-    gunController.shootSpeed = 10;
+    gunController.shootSpeed = 40;
     super.initState();
   }
   @override
@@ -41,8 +44,10 @@ class _GameState extends State<Game> {
       children: <Widget>[
         widget.background,
         Gun(
+          size: widget.size,
           gun: widget.gun,
           gunController: gunController,
+          ballController: ballController,
           bulletController: bulletController,
         )
       ],
@@ -54,12 +59,17 @@ class Gun extends StatefulWidget {
   Gun({
     Key key,
     this.gun,
+    this.size,
     this.gunController,
-    this.bulletController
+    this.bulletController,
+    this.ballController
   }) : super(key: key);
+  final Size size;
+  @required final BallController ballController;
   @required final BulletController bulletController;
   @required final GunStencil gun;
   @required final GunController gunController;
+
   @override
   _GunState createState() => _GunState();
 }
@@ -74,22 +84,18 @@ class _GunState extends State<Gun> with TickerProviderStateMixin {
     return MediaQuery.of(context).size.width - gunWidth ;
   }
 
-  void _whenGunStarted () {
+    void _onPointerDown () {
     widget.bulletController.anim.start();
   }
 
-  void _whenGunIsCanceled () {
+  void _onPointerUp () {
     widget.bulletController.anim.cancel();
   }
 
-  Widget _ballsRender () => Stack(
-    children: <Widget>[
-
-    ],
-  );
-
+  //-------------------------------------------
   @override
   void initState() {
+    _gunPosDX = widget.size.width / 2 - widget.gun.wheelSize.width / 4 - widget.gun.wheelSize.width;
     _framePos = Offset(
         ((widget.gun.wheelSize.width + widget.gun.wheelSize.width / 4) - widget.gun.wheelSize.width) - 1,
         3
@@ -100,10 +106,23 @@ class _GunState extends State<Gun> with TickerProviderStateMixin {
         -widget.gun.bodySize.height + (widget.gun.wheelSize.height / 2)
     );
 
+    widget.ballController.anim.initial(
+      screenSize: widget.size,
+      bulletPower: widget.gunController.power,
+      provider: this,
+      update: () => setState(() {}),
+      ballController: widget.ballController,
+    );
+
+    widget.ballController.anim.newBall();
+
+    widget.ballController.anim.newBall();
+
     widget.gunController.anim.initial (
-      controller: AnimationController(vsync: this, duration: Duration(milliseconds: 100), reverseDuration: Duration(milliseconds: 0)),
+      provider: this,
       update: () => setState(() {}),
       gunController: widget.gunController,
+      startPos: _gunPosDX
     );
 
     widget.bulletController.anim.initial(
@@ -111,8 +130,10 @@ class _GunState extends State<Gun> with TickerProviderStateMixin {
       bulletController: widget.bulletController,
       wheelSize: widget.gun.wheelSize,
       update: () => setState(() {}),
-      gunController: widget.gunController
+      gunController: widget.gunController,
+      ballController: widget.ballController,
     );
+
     super.initState();
   }
 
@@ -120,16 +141,17 @@ class _GunState extends State<Gun> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Stack(
       children: <Widget> [
-        widget.bulletController.anim.render(),
+        widget.bulletController.render(),
+       widget.ballController.render(),
         Align(
           alignment: Alignment.bottomCenter,
           child: Transform.translate(
             offset: Offset(
                 widget.gunController.anim.value() < 0 ?
-                  0.0 :
-                  (widget.gunController.anim.value() > _getScreenPaleWidth() ?
-                    _getScreenPaleWidth() :
-                  widget.gunController.anim.value()),
+                0.0 :
+                (widget.gunController.anim.value() > _getScreenPaleWidth() ?
+                _getScreenPaleWidth() :
+                widget.gunController.anim.value()),
                 -70
             ),
             child: Stack(
@@ -167,7 +189,7 @@ class _GunState extends State<Gun> with TickerProviderStateMixin {
                     key: widget.gunController.pos.gunKey,
                     height: 1,
                     width: 1,
-                    color: Colors.red,
+                    color: Colors.transparent,
                   ),
                 ),
               ],
@@ -177,18 +199,19 @@ class _GunState extends State<Gun> with TickerProviderStateMixin {
 
         Listener(
           onPointerDown: (details) {
-            _whenGunStarted();
+
+
+            _onPointerDown();
           },
           onPointerUp: (details) {
-            _whenGunIsCanceled();
+            _onPointerUp();
           },
           onPointerMove: (details) {
-
             if(_gunPosDX + details.delta.dx > 0.0 && _gunPosDX + details.delta.dx < _getScreenPaleWidth()) {
               widget.gunController.pos.newEl(_gunPosDX, _gunPosDX + details.delta.dx);
 
               if(AnimationStatus.forward != widget.gunController.anim.status()) {
-                widget.gunController.anim.startAnim();
+                widget.gunController.anim.start();
               }
 
               _gunPosDX +=  details.delta.dx;

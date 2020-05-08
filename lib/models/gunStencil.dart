@@ -27,8 +27,8 @@ class GunStencil {
           image: AssetImage('assets/gunElements/barrel.png'),
           fit: BoxFit.contain
         ),
-          color: Colors.transparent,
-          borderRadius: BorderRadius.only(topLeft: Radius.circular(20.0), topRight: Radius.circular(20.0),)
+        color: Colors.transparent,
+        borderRadius: BorderRadius.only(topLeft: Radius.circular(20.0), topRight: Radius.circular(20.0),)
       ),
     ),
   );
