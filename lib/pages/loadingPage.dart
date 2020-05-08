@@ -25,7 +25,7 @@ class _LoadingPageState extends State<LoadingPage> with TickerProviderStateMixin
 
   @override
   void initState() {
-    _loadCont = AnimationController(vsync: this, duration: Duration(milliseconds: 500));
+    _loadCont = AnimationController(vsync: this, duration: Duration(seconds: 1));
     _loadAnim = Tween (
       begin: 0.0,
       end: widget.size.width - 100
@@ -37,6 +37,7 @@ class _LoadingPageState extends State<LoadingPage> with TickerProviderStateMixin
     )..addListener(
         () => setState(() {
           if(_loadCont.status == AnimationStatus.completed) {
+            _loadCont.reverse();
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => GamePage(
@@ -44,6 +45,8 @@ class _LoadingPageState extends State<LoadingPage> with TickerProviderStateMixin
                 bodySize:  _sizes[1]
               ))
             );
+          } else if(_loadCont.status == AnimationStatus.dismissed) {
+            _loadCont.forward();
           }
         })
     );

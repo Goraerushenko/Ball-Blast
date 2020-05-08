@@ -23,6 +23,7 @@ class _GamePageState extends State<GamePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: FloatingActionButton(onPressed: () => Navigator.of(context).pop()),
       body: Game(
         size: MediaQuery.of(context).size,
         gun: GunStencil(
